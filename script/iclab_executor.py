@@ -18,10 +18,11 @@ def parseArguments():
         usage = "%(prog)s [options]",
         description = STEPNAME + " executor"
     )
-    parser.add_argument("-l", "--lab", type=str, required=True, help="specify labXX")
+    group = parser.add_mutually_exclusive_group(required=True)
     parser.add_argument("-s", "--step", type=str, choices=["RTL", "SYN", "GATE"], nargs="*", default=[], help="Choose step(s) from %(choices)s")
     parser.add_argument("-oj", "--output-json", type=str, help="Output options in JSON format to a file")
-    parser.add_argument("-ij", "--input-json", type=str, help="Load options from a JSON file")
+    group.add_argument("-l", "--lab", type=str, help="specify labXX")
+    group.add_argument("-ij", "--input-json", type=str, help="Load options from a JSON file")
 
     return parser.parse_args()
 
@@ -33,7 +34,7 @@ if __name__=="__main__":
     # It's better to move the argument process into one class
     # TODO
     args_dict = vars(args)
-    logging.info("Conver to dict : " + str(args_dict))
+    logging.info("Conver to dict : " + json.dumps(args_dict, indent=4))
 
     def save_options_to_json(data_dict, filename):
         with open(filename, 'w') as f:
@@ -45,14 +46,18 @@ if __name__=="__main__":
             data_json = json.load(f)
             for key, value in data_json.items():
                 data_dict[key] = value
+        
 
     if args.input_json:
-        loaded_options = load_options_from_json(args_dict, args.input_json)
-        logging.info("Loaded options from JSON : " + loaded_options)
+        load_options_from_json(args_dict, args.input_json)
+        logging.info("Loaded options from JSON : " + json.dumps(args_dict, indent=4))
     else:
         if args.output_json:
             save_options_to_json(args_dict, args.output_json)
             logging.info("Options saved to JSON file : " + args.output_json)
+
+    logging.info("After : Parser argument from JSON : " + json.dumps(args_dict, indent=4))
+
 
     # Parse path
     # TODO
@@ -87,7 +92,7 @@ if __name__=="__main__":
         stdout, stderr = process.communicate()
         if process.returncode==0:
             logging.info("Run {} successfully...".format(step_name))
-            logging.info(stdout)
+            # logging.info(stdout)
         else:
             logging.info("Run {} unsuccessfully...".format(step_name))
             logging.info(stderr)
